@@ -51,7 +51,7 @@ def get_chat(id):
     return chat.get_chat(id)
 
 @app.route('/v1/chat', methods=['POST'])
-def get_gpt(id):
+def get_gpt():
     return chat.get_gpt()
 
 @app.route('/v1/auth', methods=['POST'])

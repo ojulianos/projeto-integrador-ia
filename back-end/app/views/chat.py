@@ -29,6 +29,8 @@ def get_chat(id):
 def get_gpt():
     textoGPT = request.args.get('texto')
 
+    return jsonify(request.args)
+
     client = OpenAI()
 
     response = client.chat.completions.create(
@@ -39,7 +41,7 @@ def get_gpt():
                 "content": [
                     {
                         "type": "text",
-                        "text": textoGPT
+                        "text": "textoGPT"
                     }
                 ]
             }
@@ -53,5 +55,5 @@ def get_gpt():
             "type": "json"
         }
     )
-    return jsonify(response)
+    return response
 
