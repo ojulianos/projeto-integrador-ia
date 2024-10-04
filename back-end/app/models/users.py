@@ -10,8 +10,6 @@ class Users(db.Model):
     name = db.Column(db.String(60), nullable=False)
     email = db.Column(db.String(50), unique=True, nullable=False)
     created_on = db.Column(db.DateTime, default=datetime.datetime.now())
-    posts = db.relationship('Posts', backref='users', lazy=True)
-    commentaries = db.relationship('Commentaries', backref='users', lazy=True)
 
     def __init__(self, username, password, name, email):
         self.username = username

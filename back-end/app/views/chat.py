@@ -27,9 +27,13 @@ def get_chat(id):
     return jsonify({'message': "history don't exist", 'data': {}}), 404
 
 def get_gpt():
-    textoGPT = request.args.get('texto')
+    prompt = ""
+    profissao = request.json['profissao']
 
-    return jsonify(request.args)
+
+    prompt = "ola chat gepeto, preciso de detalhes para chegar a profissao " + profissao
+
+    return jsonify(prompt)
 
     client = OpenAI()
 

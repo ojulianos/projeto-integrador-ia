@@ -10,7 +10,7 @@ class History(db.Model):
     description= db.Column(db.Text, nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     created_on = db.Column(db.DateTime, default=datetime.datetime.now())
-    user = db.relationship('Users', back_populates='historys')
+    # user = db.relationship('Users', back_populates='historys')
 
     def __init__(self, title, description, user_id):
         self.title = title
