@@ -54,6 +54,10 @@ def get_chat(id):
 def get_gpt():
     return chat.get_gpt()
 
+@app.route('/v1/chat_chumbado', methods=['POST'])
+def get_gpt_chumbado():
+    return chat.get_chat_chumbado()
+
 @app.route('/v1/auth', methods=['POST'])
 def auth():
     pass
