@@ -36,3 +36,5 @@ tqdm==4.66.5
 typing_extensions==4.12.2
 Werkzeug==3.0.4
 zipp==3.20.2
+mysqlclient==2.2.4
+flask-cors==5.0.0
