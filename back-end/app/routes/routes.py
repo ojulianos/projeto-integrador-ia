@@ -1,6 +1,6 @@
 from app import app
 from flask import jsonify, url_for, redirect
-from ..views import users, chat, helper
+from ..views import users, chat, helper,pdf
 
 """Neste arquivo iremos criar todas rotas para aplicação para manter o código limpo usando
  as views(controllers)  e as relacionando por meio de funções"""
@@ -61,3 +61,8 @@ def get_gpt_chumbado():
 def auth():
     pass
 
+"""
+@app.route('/v1/upload_pdf', methods=['POST'])
+def upload_pdf():
+    return pdf.upload_and_read_pdf()
+"""
