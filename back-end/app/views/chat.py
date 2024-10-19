@@ -85,7 +85,7 @@ def get_gpt():
         """
 
         client = OpenAI(
-            api_key="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",
+            api_key="",
         )
         
         completion = client.chat.completions.create(
