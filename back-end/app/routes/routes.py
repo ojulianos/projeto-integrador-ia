@@ -61,8 +61,8 @@ def get_gpt_chumbado():
 def auth():
     pass
 
-"""
+
 @app.route('/v1/upload_pdf', methods=['POST'])
 def upload_pdf():
     return pdf.upload_and_read_pdf()
-"""
+
