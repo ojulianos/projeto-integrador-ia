@@ -1,4 +1,4 @@
-"""
+
 import os
 from flask import request, jsonify
 import PyPDF2
@@ -39,4 +39,3 @@ def upload_and_read_pdf():
             return jsonify({'error': 'Erro ao processar o PDF', 'details': str(e)}), 500
     else:
         return jsonify({'error': 'Apenas arquivos PDF são permitidos!'}), 400
-"""
