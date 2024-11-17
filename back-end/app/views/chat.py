@@ -71,74 +71,101 @@ def get_chat_chumbado():
 
 def get_gpt():
 
-    try:
-        cargo = request.json.get('cargo', '')
-        tecnologia = request.json.get('tecnologia', '')
-        tempoMaximo = request.json.get('tempoMaximo', '')
-        tempoMedio = request.json.get('tempoMedio', '')
-        formatoEstudos = request.json.get('formatoEstudos', '')
+    cargo = request.json.get('cargo', '')
+    tecnologia = request.json.get('tecnologia', '')
+    tempoMaximo = request.json.get('tempoMaximo', '')
+    tempoMedio = request.json.get('tempoMedio', '')
+    formatoEstudos = request.json.get('formatoEstudos', '')
 
-        prompt = f"""
-        Eu preciso de algumas etapas para chegar ao cargo de {cargo}, na tecnologia: {tecnologia}.
-        O tempo total de estudos deve ser no máximo: {tempoMaximo}, considerando um tempo médio semanal de {tempoMedio}. 
-        O formato de didática preferido é: {formatoEstudos}. 
-        """
+    prompt = f"""
+    Eu preciso de algumas etapas para chegar ao cargo de {cargo}, na tecnologia: {tecnologia}.
+    O tempo total de estudos deve ser no máximo: {tempoMaximo}, considerando um tempo médio semanal de {tempoMedio}. 
+    O formato de didática preferido é: {formatoEstudos}. 
+    """
 
-        client = OpenAI(
-            api_key="",
-        )
-        
-        completion = client.chat.completions.create(
-            model="gpt-4",
-            messages=[
-                {
-                "role": "system",
-                "content": """
-                    Você é um assistente que vai dar respostas diretas, relacionadas a o que a pessoa deve estudar para alcançar seus objetivos.
-                    Preciso que você sugira livros, sites de acordo com a didática escolhida pelo usuário, e o tempo total que o usuário deseja, 
-                    de acordo com o informado pelo mesmo, mas você ficará com a responsabilidade de separar o tempo de cada etapa para se tornar apto.
-                    O usuário também terá a possibilidade de importar um pdf, onde será lhe passado no prompt, as informações contidas, preciso que analise 
-                    o currículo e capte as experiências que o usuário já possui, tornando sua resposta mais acertiva, busque sempre procurar opções de indicação gratuitas
-                    Sempre responda ao usuário no seguinte formato de Json seguindo o modelo abaixo:
-                    {
-                        "Etapas": [
-                            {
-                                "Etapa": "Nome da Etapa",
-                                "Recursos": [
-                                    {
-                                        "Tipo": "Livro",
-                                        "Título": "Título do Livro",
-                                        "Link": "Link para compra/acesso"
-                                    },
-                                    {
-                                        "Tipo": "Curso online",
-                                        "Nome": "Nome do Curso",
-                                        "Link": "Link para acesso"
-                                    }
-                                ],
-                                "TempoEstudoSemanal": "Duração em horas",
-                                "DuracaoTotal": "Duração total da etapa em meses"
-                            }
-                        ]
-                    }
-
-                Se atente ao formato Json, precisa retornar da forma mais estruturada possível, qualquer erro na formatação, acabará impactando na
-                performace da solução.
-                """
-            },
+    client = OpenAI(
+        api_key=""
+    )
+    
+    completion = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
             {
-                "role" : "user",
-                "content" : prompt
-            }
-            ],
-            temperature=0.5,
-            top_p=0.9,
-            frequency_penalty=1,
-            presence_penalty=1,
-        )
+            "role": "system",
+            "content": """
+                Você é um assistente que vai dar respostas diretas, relacionadas a o que a pessoa deve estudar para alcançar seus objetivos.
+                Preciso que você sugira livros, sites de acordo com a didática escolhida pelo usuário, e o tempo total que o usuário deseja, 
+                de acordo com o informado pelo mesmo, mas você ficará com a responsabilidade de separar o tempo de cada etapa para se tornar apto.
+                O usuário também terá a possibilidade de importar um pdf, onde será lhe passado no prompt, as informações contidas, preciso que analise 
+                o currículo e capte as experiências que o usuário já possui, tornando sua resposta mais acertiva, busque sempre procurar opções de indicação gratuitas
 
-        return jsonify({'message': 'successfully fetched', 'data': completion.choices[0].message.content}), 200
-    except:
-        return jsonify({'message': 'unable to fetch', 'data': {}}), 500
+            Se atente ao formato Json, precisa retornar da forma mais estruturada possível, qualquer erro na formatação, acabará impactando na
+            performace da solução.
+            """
+        },
+        {
+            "role" : "user",
+            "content" : prompt
+        }
+        ],
+        temperature=0.5,
+        top_p=0.9,
+        frequency_penalty=1,
+        presence_penalty=1,
+        response_format={
+            "type": "json_schema",
+            "json_schema": {
+                "name": "email_schema",
+                "schema": {
+                    "type": "object",
+                    "properties": {
+                        "etapas": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "etapa": {
+                                        "description": "nome da etapa",
+                                        "type": "string"
+                                    },
+                                    "recursos": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "object",
+                                            "properties": {
+                                                "tipo": {
+                                                    "description": "tipo de recurso",
+                                                    "type": "string"
+                                                },
+                                                "titulo": {
+                                                    "description": "título do recurso",
+                                                    "type": "string"
+                                                },
+                                                "link": {
+                                                    "description": "link do recurso",
+                                                    "type": "string"
+                                                }
+                                            }
+                                        }
+                                    },
+                                    "tempoEstudoSemanal": {
+                                        "description": "Duração em horas",
+                                        "type": "string"
+                                    },
+                                    "duracaoTotal": {
+                                        "description": "Duração total da etapa em meses",
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        },
+                        "additionalProperties": False
+                    }
+                }
+            }
+        }
+    )
+
+    return completion.choices[0].message.content
     
 
