@@ -4,6 +4,8 @@ from flask import request, jsonify
 from ..models.history import History, History_schema, Historys_schema
 from openai import OpenAI
 import json
+import os
+import PyPDF2
 
 """Retorna detalhes do chatGPT e histórico"""
 def get_chats(user_id = ""):
@@ -83,15 +85,29 @@ def get_gpt():
 
     cargo = request.json.get('cargo', '')
     tecnologia = request.json.get('tecnologia', '')
-    tempoMaximo = request.json.get('tempoMaximo', '')
-    tempoMedio = request.json.get('tempoMedio', '')
+    tempoMaximoNumero = request.json.get('tempoMaximoNumero', '')
+    tempoMaximoTipo = request.json.get('tempoMaximoTipo', '')
+    tempoMedioNumero = request.json.get('tempoMedioNumero', '')
+    tempoMedioTipo = request.json.get('tempoMedioTipo', '')
     formatoEstudos = request.json.get('formatoEstudos', '')
+    dadosPdf = upload_and_read_pdf()
 
     prompt = f"""
     Eu preciso de algumas etapas para chegar ao cargo de {cargo}, na tecnologia: {tecnologia}.
-    O tempo total de estudos deve ser no máximo: {tempoMaximo}, considerando um tempo médio semanal de {tempoMedio}. 
+    O tempo total de estudos deve ser no máximo: {tempoMaximoNumero} {tempoMaximoTipo}, considerando um tempo médio semanal de {tempoMedioNumero} {tempoMedioTipo}. 
     O formato de didática preferido é: {formatoEstudos}. 
     """
+
+    if dadosPdf:
+        contato = "Contato: "+dadosPdf.contato+"\n"
+        competencia = "Principais competências: "+dadosPdf.competencia+"\n"
+        resumo = "Resumo: "+dadosPdf.resumo+"\n"
+        experiencia = "Experiência: "+dadosPdf.experiencia+"\n"
+        formacao = "Formação acadêmica: "+dadosPdf.formacao+"\n"
+        prompt += f"""
+        Considere que o usuário possui as seguintes informações adicionais:
+        {contato} {competencia} {resumo} {experiencia} {formacao}
+        """
 
     client = OpenAI(
         api_key=""
@@ -183,12 +199,78 @@ def get_gpt():
         
     for _ in range(3):  
         completion = generate_completion()
-        if completion and "choices" in completion:
+        if completion and hasattr(completion, 'choices'):
             content = completion.choices[0].message.content
             validated_data = validate_json(content)
             if validated_data: 
                 return validated_data
 
-    return completion.choices[0].message.content
+    return jsonify({'message': 'error on generate completion'}), 500
+    
     
 
+contato = "\nContato\n"
+competencia="\nPrincipais competências\n"
+resumo = "\nResumo\n"
+experiencia="\nExperiência\n"
+formacao="\nFormação acadêmica\n"
+
+
+UPLOAD_FOLDER = 'uploads/'
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER)
+
+
+#Função para fazer upload de PDF e ler seu conteúdo.
+
+def upload_and_read_pdf():
+    if 'pdf' not in request.files:
+        return False
+
+    # Recebendo o arquivo do front do tipo multipart/form-data e acessando com o dicionário
+    pdf_file = request.files['pdf']
+
+    if pdf_file.filename == '':
+        return {'error': 'Nome de arquivo inválido'}
+
+    if pdf_file and pdf_file.filename.endswith('.pdf'):
+      
+        pdf_path = os.path.join(UPLOAD_FOLDER, pdf_file.filename)
+        pdf_file.save(pdf_path)
+
+        texto_completo = ""
+        cont=""
+        comp=""
+        resu=""
+        expe=""
+        form=""
+        #Ler o conteúdo do PDF
+        try:
+            with open(pdf_path, 'rb') as file:
+                reader = PyPDF2.PdfReader(file)
+                for page in reader.pages:
+                    texto_completo += page.extract_text()
+                
+                cont=intervalo(texto_completo,contato,competencia)
+                comp=intervalo(texto_completo,competencia,resumo)
+                resu=intervalo(texto_completo,resumo,experiencia)
+                expe=intervalo(texto_completo,experiencia,formacao)
+                form=intervalo(texto_completo,formacao,formacao)
+
+            return {'contato':cont,'competencia':comp,'resumo':resu,'experiencia':expe,'formacao':form}
+        except Exception as e:
+            return {'error': 'Erro ao processar o PDF', 'details': str(e)}
+    else:
+        return {'error': 'Apenas arquivos PDF são permitidos!'}
+
+#Função para separar cada campo do PDF
+def intervalo(texto, palavra_inicio, palavra_fim):
+    
+    partes = texto.split(palavra_inicio)
+    
+    
+    if len(partes) > 1:
+        intervalo_texto = partes[1].split(palavra_fim)[0]
+        return intervalo_texto.strip()  
+    else:
+        return "Palavras de início ou fim não encontradas no texto."
