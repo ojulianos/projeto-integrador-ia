@@ -25,52 +25,19 @@ def get_chat(id):
     history = History.query.get(id)
     if history:
         result = History_schema.dump(history)
-        return jsonify({'message': 'successfully fetched', 'data': result.data}), 201
+        description = result['description'].replace("'", '"')
+        description = json.loads(description)
+        return json.dumps(description, indent=4)
 
     return jsonify({'message': "history don't exist", 'data': {}}), 404
 
-def get_chat_chumbado():
-    json = """
-        {
-        "Etapas": [
-            {
-                "Etapa": "Aprofundamento em fundamentos PHP",
-                "Recursos": [
-                    {
-                        "Tipo": "Livro",
-                        "Título": "PHP & MySQL: Server-side Web Development",
-                        "Link": "https://www.amazon.com/PHP-MySQL-Server-side-Development-Learn/dp/1119149223"
-                    },
-                    {
-                        "Tipo": "Curso online",
-                        "Nome": "Learn PHP - Codecademy",
-                        "Link": "https://www.codecademy.com/learn/learn-php"
-                    }
-                ],
-                "TempoEstudoSemanal": "2 horas",
-                "DuracaoTotal": "6 meses"
-            },
-            {
-                "Etapa": "Aprofundamento em programação orientada a objetos com PHP",
-                "Recursos": [
-                    {
-                        "Tipo": "Livro",
-                        "Título": "Mastering Object-oriented PHP",
-                        "Link": "https://www.amazon.com/Mastering-Object-Oriented-PHP-Jordan-Tamayo/dp/B01K3I9Y4O"
-                    },
-                    {
-                        "Tipo": "Curso online",
-                        "Nome": "Object Oriented PHP & MVC - Udemy",
-                        "Link": "https://www.udemy.com/course/object-oriented-php-mvc/"
-                    }
-                ],
-                "TempoEstudoSemanal": "2 horas",
-                "DuracaoTotal": "6 meses"
-            }
-        ]
-    }
-    """
-    return json
+def get_chat_chumbado(current_user):
+    history = History.query.filter_by(user_id=current_user.id).order_by(History.id.desc()).first()
+    if history:
+        result = History_schema.dump(history)
+        description = result['description'].replace("'", '"')
+        description = json.loads(description)
+        return json.dumps(description, indent=4)
 
 def validate_json(response_content):
 
@@ -81,7 +48,7 @@ def validate_json(response_content):
     except json.JSONDecodeError:
         return None
 
-def get_gpt():
+def get_gpt(current_user):
 
     cargo = request.json.get('cargo', '')
     tecnologia = request.json.get('tecnologia', '')
@@ -202,7 +169,12 @@ def get_gpt():
         if completion and hasattr(completion, 'choices'):
             content = completion.choices[0].message.content
             validated_data = validate_json(content)
-            if validated_data: 
+            if validated_data:
+                # Salvar no banco de dados historico
+                title = "Chat dia hoje"
+                history = History(title=title, description=validated_data, user_id=current_user.id)
+                db.session.add(history)
+                db.session.commit()
                 return validated_data
 
     return jsonify({'message': 'error on generate completion'}), 500

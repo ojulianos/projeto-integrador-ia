@@ -50,12 +50,14 @@ def get_chat(id):
     return chat.get_chat(id)
 
 @app.route('/v1/chat', methods=['POST'])
-def get_gpt():
-    return chat.get_gpt()
+@helper.token_required
+def get_gpt(current_user):
+    return chat.get_gpt(current_user)
 
 @app.route('/v1/chat_chumbado', methods=['POST'])
-def get_gpt_chumbado():
-    return chat.get_chat_chumbado()
+@helper.token_required
+def get_gpt_chumbado(current_user):
+    return chat.get_chat_chumbado(current_user)
 
 @app.route('/v1/auth', methods=['POST'])
 def auth():
