@@ -35,9 +35,10 @@ def get_chat_chumbado(current_user):
     history = History.query.filter_by(user_id=current_user.id).order_by(History.id.desc()).first()
     if history:
         result = History_schema.dump(history)
-        description = result['description'].replace("'", '"')
+        description = result['description'].replace("'", '"').replace('""', '"-"')
         description = json.loads(description)
-        return json.dumps(description, indent=4)
+        json_proessado = remove_spaces(description)
+        return json.dumps(json_proessado, indent=4)
 
 def validate_json(response_content):
 
@@ -75,6 +76,8 @@ def get_gpt(current_user):
         Considere que o usuário possui as seguintes informações adicionais:
         {contato} {competencia} {resumo} {experiencia} {formacao}
         """
+    prompt += "Por favor, me ajude a montar um plano de estudos para alcançar esse objetivo."
+    prompt += "Não utilize aspas simples ou duplas no texto, pois isso pode impactar na formatação do JSON."
 
     client = OpenAI(
         api_key=""
@@ -246,3 +249,14 @@ def intervalo(texto, palavra_inicio, palavra_fim):
         return intervalo_texto.strip()  
     else:
         return "Palavras de início ou fim não encontradas no texto."
+
+
+def remove_spaces(data):
+    if isinstance(data, dict):
+        return {key.strip(): remove_spaces(value) for key, value in data.items()}
+    elif isinstance(data, list):
+        return [remove_spaces(element) for element in data]
+    elif isinstance(data, str):
+        return data.strip()
+    else:
+        return data
