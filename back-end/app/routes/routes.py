@@ -41,9 +41,10 @@ def delete_users(id):
 def update_users(id):
     return users.update_user(id)
 
-@app.route('/v1/history/<user_id>/user', methods=['GET'])
-def get_chats(user_id):
-    return chat.get_chats(user_id)
+@app.route('/v1/history', methods=['GET'])
+@helper.token_required
+def get_chats(current_user):
+    return chat.get_chats(current_user)
 
 @app.route('/v1/history/<id>', methods=['GET'])
 def get_chat(id):

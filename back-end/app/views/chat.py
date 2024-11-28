@@ -8,15 +8,21 @@ import os
 import PyPDF2
 
 """Retorna detalhes do chatGPT e histórico"""
-def get_chats(user_id = ""):
+def get_chats(current_user):
     texto = request.args.get('texto')
     if texto:
-        history = History.query.filter(History.description.like(f'%{texto}%')).all()
+        history = History.query.filter(History.description.contains(texto), History.user_id == current_user.id).all()
     else:
-        history = History.query.all()
+        history = History.query.filter_by(user_id=current_user.id).all()
+
     if history:
-        result = History_schema.dump(user_id)
-        return jsonify({'message': 'successfully fetched', 'data': result.data})
+        history = Historys_schema.dump(history)
+        # criar retorno com apenas os campos necessario id e titulo
+        retorno_json = []
+        for item in history:
+            retorno_json.append({'id': item['id'], 'title': item['title']})
+
+        return jsonify({'message': 'successfully fetched', 'data': retorno_json})
 
     return jsonify({'message': 'nothing found', 'data': {}})
 
@@ -25,9 +31,10 @@ def get_chat(id):
     history = History.query.get(id)
     if history:
         result = History_schema.dump(history)
-        description = result['description'].replace("'", '"')
+        description = result['description'].replace("'", '"').replace('""', '"-"')
         description = json.loads(description)
-        return json.dumps(description, indent=4)
+        json_proessado = remove_spaces(description)
+        return json.dumps(json_proessado, indent=4)
 
     return jsonify({'message': "history don't exist", 'data': {}}), 404
 
@@ -39,6 +46,29 @@ def get_chat_chumbado(current_user):
         description = json.loads(description)
         json_proessado = remove_spaces(description)
         return json.dumps(json_proessado, indent=4)
+    
+    # gerar historico pedindo para usuario tentar novamente
+    description = {
+        "etapas": [
+            {
+                "etapa": "Etapa 1",
+                "recursos": [
+                    {
+                        "tipo": "livro",
+                        "titulo": "Dica",
+                        "link": "https://www.google.com"
+                    },
+                    {
+                        "tipo": "site",
+                        "titulo": "Site 1",
+                        "link": "https://www.google.com"
+                    }
+                ]
+            }
+        ]}
+
+    return jsonify({'message': "history don't exist", 'data': json.loads(description)}), 404
+    
 
 def validate_json(response_content):
 
@@ -174,7 +204,7 @@ def get_gpt(current_user):
             validated_data = validate_json(content)
             if validated_data:
                 # Salvar no banco de dados historico
-                title = "Chat dia hoje"
+                title = cargo + " - " + tecnologia + " - " + formatoEstudos
                 history = History(title=title, description=validated_data, user_id=current_user.id)
                 db.session.add(history)
                 db.session.commit()
