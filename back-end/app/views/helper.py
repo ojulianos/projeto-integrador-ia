@@ -10,7 +10,7 @@ from werkzeug.security import check_password_hash
 def token_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
-        token = request.args.get('token')
+        token = request.headers.get('Authorization').replace('Bearer ', '')
         if not token:
             return jsonify({'message': 'token is missing', 'data': []}), 401
         try:

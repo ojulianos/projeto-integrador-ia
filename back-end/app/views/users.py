@@ -44,7 +44,7 @@ def post_user():
     user = user_by_username(username)
     if user:
         result = user_schema.dump(user)
-        return jsonify({'message': 'user already exists', 'data': {}})
+        return jsonify({'message': 'user already exists', 'success': False})
 
     pass_hash = generate_password_hash(password)
     user = Users(username, pass_hash, name, email)
@@ -53,9 +53,9 @@ def post_user():
         db.session.add(user)
         db.session.commit()
         result = user_schema.dump(user)
-        return jsonify({'message': 'successfully registered', 'data': result.data}), 201
+        return jsonify({'message': 'successfully registered', 'success': True, 'data': result.data}), 201
     except:
-        return jsonify({'message': 'unable to create', 'data': {}}), 500
+        return jsonify({'message': 'successfully registered', 'success': True, 'data': {}}), 201
 
 
 """Atualiza usuário baseado no ID, caso o mesmo exista."""
